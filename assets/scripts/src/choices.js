@@ -511,7 +511,9 @@ class Choices {
 
           // Scroll back to top of choices list
           if (this.config.resetScrollPosition) {
-            this.choiceList.scrollTop = 0;
+            requestAnimationFrame(() => {
+              this.choiceList.scrollTop = 0;
+            });
           }
 
           // If we have grouped options
