@@ -771,8 +771,32 @@ class Choices {
         html.offsetHeight
       );
 
+    const s = (o) => {
+      return Object.keys(o).map(key => {
+        const value = o[key];
+        return key + ':' + value;
+      }).join(';')
+    };
+
+    // TODO: Add a feature toggle or auto-detect if the dropdown is hidden due to overflow styles
+  
+    const outerRect = this.containerOuter.getBoundingClientRect();
+    const innerRect = this.containerInner.getBoundingClientRect();
+    this.containerOuterFixed.setAttribute('style', s({
+      position: 'fixed',
+      top: outerRect.top + 'px',
+      left: outerRect.left + 'px',
+      width: outerRect.width + 'px',
+      height: innerRect.height + 'px'
+    }));
+    this.containerOuter.removeChild(this.dropdown);
+    this.containerOuterFixed.appendChild(this.dropdown);
+    body.appendChild(this.containerOuterFixed);
+
     this.containerOuter.classList.add(this.config.classNames.openState);
     this.containerOuter.setAttribute('aria-expanded', 'true');
+    this.containerOuterFixed.classList.add(this.config.classNames.openState);
+    this.containerOuterFixed.setAttribute('aria-expanded', 'true');
     this.dropdown.classList.add(this.config.classNames.activeState);
     this.dropdown.setAttribute('aria-expanded', 'true');
 
@@ -789,6 +813,7 @@ class Choices {
 
     if (shouldFlip) {
       this.containerOuter.classList.add(this.config.classNames.flippedState);
+      this.containerOuterFixed.classList.add(this.config.classNames.flippedState);
     }
 
     // Optionally focus the input if we have a search input
@@ -807,6 +832,8 @@ class Choices {
    * @public
    */
   hideDropdown(blurInput = false) {
+    const body = document.body;
+
     // A dropdown flips if it does not have space within the page
     const isFlipped = this.containerOuter.classList.contains(this.config.classNames.flippedState);
 
@@ -823,6 +850,10 @@ class Choices {
     if (blurInput && this.canSearch && document.activeElement === this.input) {
       this.input.blur();
     }
+
+    body.removeChild(this.containerOuterFixed);
+    this.containerOuterFixed.removeChild(this.dropdown);
+    this.containerOuter.appendChild(this.dropdown);
 
     triggerEvent(this.passedElement, 'hideDropdown', {});
 
@@ -1610,11 +1641,11 @@ class Choices {
    * @return
    */
   _onKeyDown(e) {
-    if (e.target !== this.input && !this.containerOuter.contains(e.target)) {
+    const target = e.target;
+    if (target !== this.input && !(this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
       return;
     }
 
-    const target = e.target;
     const activeItems = this.store.getItemsFilteredByActive();
     const hasFocusedInput = this.input === document.activeElement;
     const hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
@@ -1623,6 +1654,7 @@ class Choices {
 
     const backKey = 46;
     const deleteKey = 8;
+    const tabKey = 9;
     const enterKey = 13;
     const aKey = 65;
     const escapeKey = 27;
@@ -1694,6 +1726,14 @@ class Choices {
       }
     };
 
+    const onTabKey = () => {
+      if (hasActiveDropdown) {
+        this.toggleDropdown();
+        this.containerOuter.focus();
+        e.preventDefault();
+      }
+    }
+
     const onEscapeKey = () => {
       if (hasActiveDropdown) {
         this.toggleDropdown();
@@ -1756,6 +1796,7 @@ class Choices {
     // Map keys to key actions
     const keyDownActions = {
       [aKey]: onAKey,
+      [tabKey]: onTabKey,
       [enterKey]: onEnterKey,
       [escapeKey]: onEscapeKey,
       [upKey]: onDirectionKey,
@@ -1862,7 +1903,7 @@ class Choices {
     const hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
 
     // If a user tapped within our container...
-    if (this.wasTap === true && this.containerOuter.contains(target)) {
+    if (this.wasTap === true && (this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
       // ...and we aren't dealing with a single select box, show dropdown/focus input
       if ((target === this.containerOuter || target === this.containerInner) && !this.isSelectOneElement) {
         if (this.isTextElement) {
@@ -1898,7 +1939,7 @@ class Choices {
       this.isScrollingOnIe = true;
     }
 
-    if (this.containerOuter.contains(target) && target !== this.input) {
+    if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) && target !== this.input) {
       let foundTarget;
       const activeItems = this.store.getItemsFilteredByActive();
       const hasShiftKey = e.shiftKey;
@@ -1927,7 +1968,7 @@ class Choices {
     const activeItems = this.store.getItemsFilteredByActive();
 
     // If target is something that concerns us
-    if (this.containerOuter.contains(target)) {
+    if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
       // Handle button delete
       if (target.hasAttribute('data-button')) {
         this._handleButtonAction(activeItems, target);
@@ -2002,7 +2043,7 @@ class Choices {
   _onFocus(e) {
     const target = e.target;
     // If target is something that concerns us
-    if (this.containerOuter.contains(target)) {
+    if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
       const hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
       const focusActions = {
         text: () => {
@@ -2045,7 +2086,7 @@ class Choices {
   _onBlur(e) {
     const target = e.target;
     // If target is something that concerns us
-    if (this.containerOuter.contains(target) && !this.isScrollingOnIe) {
+    if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) && !this.isScrollingOnIe) {
       const activeItems = this.store.getItemsFilteredByActive();
       const hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
       const hasHighlightedItems = activeItems.some(item => item.highlighted);
@@ -2733,6 +2774,7 @@ class Choices {
     const dropdown = this._getTemplate('dropdown');
 
     this.containerOuter = containerOuter;
+    this.containerOuterFixed = this.containerOuter.cloneNode(false);
     this.containerInner = containerInner;
     this.input = input;
     this.choiceList = choiceList;

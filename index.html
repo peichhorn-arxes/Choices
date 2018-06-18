@@ -34,6 +34,9 @@
         .visible-ie { display: block; }
     </style>
     <![endif]-->
+    <style>
+        body > .choices { color: black; }
+    </style>
 </head>
 
 <body>
@@ -279,6 +282,19 @@
         <option value="Liverpool Street">Liverpool Street</option>
         <option value="Kings Cross St. Pancras">Kings Cross St. Pancras</option>
       </select>
+
+      <label for="choices-single-fixed-dropdown">Overflow Container</label>
+      <table style="width: 100%;">
+        <tr>
+          <td style="overflow: hidden;">
+            <select class="form-control" data-trigger name="choices-single-fixed-dropdown" id="choices-single-fixed-dropdown" placeholder="This is a search placeholder">
+              <option value="Dropdown item 1">Dropdown item 1</option>
+              <option value="Dropdown item 2">Dropdown item 2</option>
+              <option value="Dropdown item 3">Dropdown item 3</option>
+            </select>
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
   <script>
