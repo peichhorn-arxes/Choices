@@ -1,4 +1,4 @@
-/*! choices.js v3.0.4 | (c) 2018 Josh Johnson | https://github.com/jshjohnson/Choices#readme */ 
+/*! choices.js v3.0.4 | (c) 2019 Josh Johnson | https://github.com/jshjohnson/Choices#readme */ 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory();
@@ -895,7 +895,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.dropdown.setAttribute('aria-expanded', 'true');
 
 	      var dimensions = this.dropdown.getBoundingClientRect();
-	      var dropdownPos = Math.ceil(dimensions.top + window.scrollY + this.dropdown.offsetHeight);
+	      var dropdownPos = Math.ceil(dimensions.top + window.pageYOffset + this.dropdown.offsetHeight);
 
 	      // If flip is enabled and the dropdown bottom position is greater than the window height flip the dropdown.
 	      var shouldFlip = false;
@@ -5870,10 +5870,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var getScrollPosition = exports.getScrollPosition = function getScrollPosition(position) {
 	  if (position === 'bottom') {
 	    // Scroll position from the bottom of the viewport
-	    return Math.max((window.scrollY || window.pageYOffset) + (window.innerHeight || document.documentElement.clientHeight));
+	    return Math.max(window.pageYOffset + (window.innerHeight || document.documentElement.clientHeight));
 	  } else {
 	    // Scroll position from the top of the viewport
-	    return window.scrollY || window.pageYOffset;
+	    return window.pageYOffset;
 	  }
 	};
 

@@ -390,10 +390,10 @@ export const getAdjacentEl = (startEl, className, direction = 1) => {
 export const getScrollPosition = function(position) {
   if (position === 'bottom') {
     // Scroll position from the bottom of the viewport
-    return Math.max((window.scrollY || window.pageYOffset) + (window.innerHeight || document.documentElement.clientHeight));
+    return Math.max(window.pageYOffset + (window.innerHeight || document.documentElement.clientHeight));
   } else {
     // Scroll position from the top of the viewport
-    return (window.scrollY || window.pageYOffset);
+    return window.pageYOffset;
   }
 };
 
