@@ -92,9 +92,12 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+	var staticTemplateCache = {};
+
 	/**
 	 * Choices
 	 */
+
 	var Choices = function () {
 	  function Choices() {
 	    var element = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '[data-choice]';
@@ -208,12 +211,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 
 	    // Create data store
-	    this.store = new _index2.default(this.render);
+	    this.store = new _index2.default();
 
 	    // State tracking
 	    this.initialised = false;
-	    this.currentState = {};
-	    this.prevState = {};
+	    this.currentState = this.store.getState();
+	    this.prevState = this.currentState;
 	    this.currentValue = '';
 
 	    // Retrieve triggering element (i.e. element with 'data-choice' trigger)
@@ -264,7 +267,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.baseId = (0, _utils.generateId)(this.passedElement, 'choices-');
 
 	    // Bind methods
-	    this.render = this.render.bind(this);
+	    this.render = (0, _utils.debounce)(this.render.bind(this), 50);
 
 	    // Bind event handlers
 	    this._onFocus = this._onFocus.bind(this);
@@ -590,7 +593,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // Only render if our state has actually changed
 	      if (this.currentState !== this.prevState) {
 	        // Choices
-	        if (this.currentState.choices !== this.prevState.choices || this.currentState.groups !== this.prevState.groups || this.currentState.items !== this.prevState.items) {
+	        if (this.currentState.general.showDropdown && (!this.prevState.general.showDropdown || this.currentState.choices !== this.prevState.choices || this.currentState.groups !== this.prevState.groups || this.currentState.items !== this.prevState.items)) {
 	          if (this.isSelectElement) {
 	            // Get active groups/choices
 	            var activeGroups = this.store.getGroupsFilteredByActive();
@@ -885,6 +888,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function showDropdown() {
 	      var focusInput = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
+	      this._setShowDropdown(true);
 	      var body = document.body;
 	      var html = document.documentElement;
 	      var winHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
@@ -930,6 +934,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function hideDropdown() {
 	      var blurInput = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
+	      this._setShowDropdown(false);
 	      // A dropdown flips if it does not have space within the page
 	      var isFlipped = this.containerOuter.classList.contains(this.config.classNames.flippedState);
 
@@ -2610,10 +2615,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (!template) {
 	        return null;
 	      }
+
 	      var templates = this.config.templates;
 
 	      for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
 	        args[_key - 1] = arguments[_key];
+	      }
+
+	      if (!args.length) {
+	        staticTemplateCache[template] = staticTemplateCache[template] || templates[template].apply(templates, args);
+	        return staticTemplateCache[template].cloneNode(true);
 	      }
 
 	      return templates[template].apply(templates, args);
@@ -2715,6 +2726,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: '_setLoading',
 	    value: function _setLoading(isLoading) {
 	      this.store.dispatch((0, _index3.setIsLoading)(isLoading));
+	    }
+	  }, {
+	    key: '_setShowDropdown',
+	    value: function _setShowDropdown(isShowDropdown) {
+	      this.store.dispatch((0, _index3.setIsShowDropdown)(isShowDropdown));
 	    }
 
 	    /**
@@ -5099,7 +5115,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  // mutating our actual state
 	  // See: http://stackoverflow.com/a/35641992
 	  if (action.type === 'CLEAR_ALL') {
-	    state = undefined;
+	    state = {
+	      general: state.general
+	    };
 	  }
 
 	  return appReducer(state, action);
@@ -5353,14 +5371,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	var general = function general() {
-	  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { loading: false };
+	  var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : { loading: false, showDropdown: false };
 	  var action = arguments[1];
 
 	  switch (action.type) {
 	    case 'LOADING':
 	      {
 	        return {
+	          showDropdown: state.showDropdown,
 	          loading: action.isLoading
+	        };
+	      }
+
+	    case 'SHOW_DROPDOWN':
+	      {
+	        return {
+	          showDropdown: action.isShowDropdown,
+	          loading: state.loading
 	        };
 	      }
 
@@ -5469,6 +5496,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return {
 	    type: 'LOADING',
 	    isLoading: isLoading
+	  };
+	};
+
+	var setIsShowDropdown = exports.setIsShowDropdown = function setIsShowDropdown(isShowDropdown) {
+	  return {
+	    type: 'SHOW_DROPDOWN',
+	    isShowDropdown: isShowDropdown
 	  };
 		};
 

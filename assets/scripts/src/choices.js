@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import Store from './store/index.js';
 import {
   setIsLoading,
+  setIsShowDropdown,
   addItem,
   removeItem,
   highlightItem,
@@ -15,6 +16,7 @@ import {
 }
 from './actions/index';
 import {
+  debounce,
   isScrolledIntoView,
   getAdjacentEl,
   wrap,
@@ -33,6 +35,8 @@ import {
 }
 from './lib/utils.js';
 import './lib/polyfills.js';
+
+const staticTemplateCache = {};
 
 /**
  * Choices
@@ -147,12 +151,12 @@ class Choices {
     }
 
     // Create data store
-    this.store = new Store(this.render);
+    this.store = new Store();
 
     // State tracking
     this.initialised = false;
-    this.currentState = {};
-    this.prevState = {};
+    this.currentState = this.store.getState();
+    this.prevState = this.currentState;
     this.currentValue = '';
 
     // Retrieve triggering element (i.e. element with 'data-choice' trigger)
@@ -208,7 +212,7 @@ class Choices {
     this.baseId = generateId(this.passedElement, 'choices-');
 
     // Bind methods
-    this.render = this.render.bind(this);
+    this.render = debounce(this.render.bind(this), 50);
 
     // Bind event handlers
     this._onFocus = this._onFocus.bind(this);
@@ -495,9 +499,10 @@ class Choices {
     if (this.currentState !== this.prevState) {
       // Choices
       if (
+        this.currentState.general.showDropdown && (!this.prevState.general.showDropdown ||
         this.currentState.choices !== this.prevState.choices ||
         this.currentState.groups !== this.prevState.groups ||
-        this.currentState.items !== this.prevState.items
+        this.currentState.items !== this.prevState.items)
       ) {
         if (this.isSelectElement) {
           // Get active groups/choices
@@ -761,6 +766,7 @@ class Choices {
    * @public
    */
   showDropdown(focusInput = false) {
+    this._setShowDropdown(true);
     const body = document.body;
     const html = document.documentElement;
     const winHeight = Math.max(
@@ -807,6 +813,7 @@ class Choices {
    * @public
    */
   hideDropdown(blurInput = false) {
+    this._setShowDropdown(false);
     // A dropdown flips if it does not have space within the page
     const isFlipped = this.containerOuter.classList.contains(this.config.classNames.flippedState);
 
@@ -2451,7 +2458,14 @@ class Choices {
     if (!template) {
       return null;
     }
+
     const templates = this.config.templates;
+
+    if (!args.length) {
+      staticTemplateCache[template] = staticTemplateCache[template] || templates[template](...args);
+      return staticTemplateCache[template].cloneNode(true);
+    }
+
     return templates[template](...args);
   }
 
@@ -2715,6 +2729,12 @@ class Choices {
   _setLoading(isLoading) {
     this.store.dispatch(
       setIsLoading(isLoading)
+    );
+  }
+
+  _setShowDropdown(isShowDropdown) {
+    this.store.dispatch(
+      setIsShowDropdown(isShowDropdown)
     );
   }
 

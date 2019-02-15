@@ -18,7 +18,9 @@ const rootReducer = (passedState, action) => {
   // mutating our actual state
   // See: http://stackoverflow.com/a/35641992
   if (action.type === 'CLEAR_ALL') {
-    state = undefined;
+    state = {
+      general: state.general
+    };
   }
 
   return appReducer(state, action);

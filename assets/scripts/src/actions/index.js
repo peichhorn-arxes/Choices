@@ -86,3 +86,9 @@ export const setIsLoading = (isLoading) => {
   };
 };
 
+export const setIsShowDropdown = (isShowDropdown) => {
+  return {
+    type: 'SHOW_DROPDOWN',
+    isShowDropdown,
+  };
+};
