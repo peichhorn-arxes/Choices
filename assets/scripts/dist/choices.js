@@ -2623,8 +2623,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 
 	      if (!args.length) {
-	        staticTemplateCache[template] = staticTemplateCache[template] || templates[template].apply(templates, args);
-	        return staticTemplateCache[template].cloneNode(true);
+	        var key = template + '-' + (this.isSelectOneElement ? 'single' : 'multiple');
+	        staticTemplateCache[key] = staticTemplateCache[key] || templates[template].apply(templates, args);
+	        return staticTemplateCache[key].cloneNode(true);
 	      }
 
 	      return templates[template].apply(templates, args);

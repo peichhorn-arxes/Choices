@@ -2462,8 +2462,9 @@ class Choices {
     const templates = this.config.templates;
 
     if (!args.length) {
-      staticTemplateCache[template] = staticTemplateCache[template] || templates[template](...args);
-      return staticTemplateCache[template].cloneNode(true);
+      const key = template + '-' + (this.isSelectOneElement ? 'single' : 'multiple');
+      staticTemplateCache[key] = staticTemplateCache[key] || templates[template](...args);
+      return staticTemplateCache[key].cloneNode(true);
     }
 
     return templates[template](...args);
