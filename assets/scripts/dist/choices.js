@@ -380,6 +380,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      // Re-assign values - this is weird, I know
 	      this.passedElement.value = this.passedElement.value;
 
+	      if (this.containerOuterFixed.parentNode) {
+	        this.containerOuterFixed.parentNode.removeChild(this.containerOuterFixed);
+	      }
+
 	      // Move passed element back to original position
 	      this.containerOuter.parentNode.insertBefore(this.passedElement, this.containerOuter);
 	      // Remove added elements
@@ -584,7 +588,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    value: function render() {
 	      var _this4 = this;
 
-	      if (this.store.isLoading()) {
+	      if (!this.initialised || this.store.isLoading()) {
 	        return;
 	      }
 
@@ -893,8 +897,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var html = document.documentElement;
 	      var winHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
 
+	      var s = function s(o) {
+	        return Object.keys(o).map(function (key) {
+	          var value = o[key];
+	          return key + ':' + value;
+	        }).join(';');
+	      };
+
+	      // TODO: Add a feature toggle or auto-detect if the dropdown is hidden due to overflow styles
+
+	      var outerRect = this.containerOuter.getBoundingClientRect();
+	      var innerRect = this.containerInner.getBoundingClientRect();
+	      this.containerOuterFixed.setAttribute('style', s({
+	        position: 'fixed',
+	        top: outerRect.top + 'px',
+	        left: outerRect.left + 'px',
+	        width: outerRect.width + 'px',
+	        height: innerRect.height + 'px'
+	      }));
+	      this.containerOuter.removeChild(this.dropdown);
+	      this.containerOuterFixed.appendChild(this.dropdown);
+	      body.appendChild(this.containerOuterFixed);
+
 	      this.containerOuter.classList.add(this.config.classNames.openState);
 	      this.containerOuter.setAttribute('aria-expanded', 'true');
+	      this.containerOuterFixed.classList.add(this.config.classNames.openState);
+	      this.containerOuterFixed.setAttribute('aria-expanded', 'true');
 	      this.dropdown.classList.add(this.config.classNames.activeState);
 	      this.dropdown.setAttribute('aria-expanded', 'true');
 
@@ -911,6 +939,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      if (shouldFlip) {
 	        this.containerOuter.classList.add(this.config.classNames.flippedState);
+	        this.containerOuterFixed.classList.add(this.config.classNames.flippedState);
 	      }
 
 	      // Optionally focus the input if we have a search input
@@ -935,6 +964,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var blurInput = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
 	      this._setShowDropdown(false);
+	      var body = document.body;
+
 	      // A dropdown flips if it does not have space within the page
 	      var isFlipped = this.containerOuter.classList.contains(this.config.classNames.flippedState);
 
@@ -951,6 +982,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if (blurInput && this.canSearch && document.activeElement === this.input) {
 	        this.input.blur();
 	      }
+
+	      body.removeChild(this.containerOuterFixed);
+	      this.containerOuterFixed.removeChild(this.dropdown);
+	      this.containerOuter.appendChild(this.dropdown);
 
 	      (0, _utils.triggerEvent)(this.passedElement, 'hideDropdown', {});
 
@@ -1753,11 +1788,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var _this17 = this,
 	          _keyDownActions;
 
-	      if (e.target !== this.input && !this.containerOuter.contains(e.target)) {
+	      var target = e.target;
+	      if (target !== this.input && !(this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
 	        return;
 	      }
 
-	      var target = e.target;
 	      var activeItems = this.store.getItemsFilteredByActive();
 	      var hasFocusedInput = this.input === document.activeElement;
 	      var hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
@@ -1766,6 +1801,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var backKey = 46;
 	      var deleteKey = 8;
+	      var tabKey = 9;
 	      var enterKey = 13;
 	      var aKey = 65;
 	      var escapeKey = 27;
@@ -1836,6 +1872,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	      };
 
+	      var onTabKey = function onTabKey() {
+	        if (hasActiveDropdown) {
+	          _this17.toggleDropdown();
+	          _this17.containerOuter.focus();
+	          e.preventDefault();
+	        }
+	      };
+
 	      var onEscapeKey = function onEscapeKey() {
 	        if (hasActiveDropdown) {
 	          _this17.toggleDropdown();
@@ -1896,7 +1940,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      };
 
 	      // Map keys to key actions
-	      var keyDownActions = (_keyDownActions = {}, _defineProperty(_keyDownActions, aKey, onAKey), _defineProperty(_keyDownActions, enterKey, onEnterKey), _defineProperty(_keyDownActions, escapeKey, onEscapeKey), _defineProperty(_keyDownActions, upKey, onDirectionKey), _defineProperty(_keyDownActions, pageUpKey, onDirectionKey), _defineProperty(_keyDownActions, downKey, onDirectionKey), _defineProperty(_keyDownActions, pageDownKey, onDirectionKey), _defineProperty(_keyDownActions, deleteKey, onDeleteKey), _defineProperty(_keyDownActions, backKey, onDeleteKey), _keyDownActions);
+	      var keyDownActions = (_keyDownActions = {}, _defineProperty(_keyDownActions, aKey, onAKey), _defineProperty(_keyDownActions, tabKey, onTabKey), _defineProperty(_keyDownActions, enterKey, onEnterKey), _defineProperty(_keyDownActions, escapeKey, onEscapeKey), _defineProperty(_keyDownActions, upKey, onDirectionKey), _defineProperty(_keyDownActions, pageUpKey, onDirectionKey), _defineProperty(_keyDownActions, downKey, onDirectionKey), _defineProperty(_keyDownActions, pageDownKey, onDirectionKey), _defineProperty(_keyDownActions, deleteKey, onDeleteKey), _defineProperty(_keyDownActions, backKey, onDeleteKey), _keyDownActions);
 
 	      // If keycode has a function, run it
 	      if (keyDownActions[e.keyCode]) {
@@ -2004,7 +2048,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
 
 	      // If a user tapped within our container...
-	      if (this.wasTap === true && this.containerOuter.contains(target)) {
+	      if (this.wasTap === true && (this.containerOuter.contains(target) || this.containerOuterFixed.contains(target))) {
 	        // ...and we aren't dealing with a single select box, show dropdown/focus input
 	        if ((target === this.containerOuter || target === this.containerInner) && !this.isSelectOneElement) {
 	          if (this.isTextElement) {
@@ -2043,7 +2087,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.isScrollingOnIe = true;
 	      }
 
-	      if (this.containerOuter.contains(target) && target !== this.input) {
+	      if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) && target !== this.input) {
 	        var foundTarget = void 0;
 	        var activeItems = this.store.getItemsFilteredByActive();
 	        var hasShiftKey = e.shiftKey;
@@ -2075,7 +2119,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var activeItems = this.store.getItemsFilteredByActive();
 
 	      // If target is something that concerns us
-	      if (this.containerOuter.contains(target)) {
+	      if (this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) {
 	        // Handle button delete
 	        if (target.hasAttribute('data-button')) {
 	          this._handleButtonAction(activeItems, target);
@@ -2163,7 +2207,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var target = e.target;
 	      // If target is something that concerns us
-	      if (this.containerOuter.contains(target)) {
+	      if (this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) {
 	        var hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
 	        var focusActions = {
 	          text: function text() {
@@ -2211,7 +2255,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	      var target = e.target;
 	      // If target is something that concerns us
-	      if (this.containerOuter.contains(target) && !this.isScrollingOnIe) {
+	      if ((this.containerOuter.contains(target) || this.containerOuterFixed.contains(target)) && !this.isScrollingOnIe) {
 	        var activeItems = this.store.getItemsFilteredByActive();
 	        var hasActiveDropdown = this.dropdown.classList.contains(this.config.classNames.activeState);
 	        var hasHighlightedItems = activeItems.some(function (item) {
@@ -2754,6 +2798,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var dropdown = this._getTemplate('dropdown');
 
 	      this.containerOuter = containerOuter;
+	      this.containerOuterFixed = this.containerOuter.cloneNode(false);
 	      this.containerInner = containerInner;
 	      this.input = input;
 	      this.choiceList = choiceList;
