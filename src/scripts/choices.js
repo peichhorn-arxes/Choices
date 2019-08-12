@@ -9,6 +9,7 @@ import {
   List,
   WrappedInput,
   WrappedSelect,
+  FixedPositionDropdownContainer,
 } from './components';
 import { DEFAULT_CONFIG, EVENTS, KEY_CODES } from './constants';
 import { TEMPLATES } from './templates';
@@ -151,6 +152,7 @@ class Choices {
     this._onKeyUp = this._onKeyUp.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onClick = this._onClick.bind(this);
+    this._onScroll = this._onScroll.bind(this);
     this._onTouchMove = this._onTouchMove.bind(this);
     this._onTouchEnd = this._onTouchEnd.bind(this);
     this._onMouseDown = this._onMouseDown.bind(this);
@@ -217,6 +219,7 @@ class Choices {
 
     this._removeEventListeners();
     this.passedElement.reveal();
+    this.dropdownWrapper.destroy();
     this.containerOuter.unwrap(this.passedElement.element);
 
     if (this._isSelectElement) {
@@ -344,7 +347,9 @@ class Choices {
 
     requestAnimationFrame(() => {
       this.dropdown.show();
-      this.containerOuter.open(this.dropdown.distanceFromTopWindow());
+      const dropdownPos = this.dropdown.distanceFromTopWindow();
+      this.dropdownWrapper.open(dropdownPos);
+      this.containerOuter.open(dropdownPos);
 
       if (!preventInputFocus && this._canSearch) {
         this.input.focus();
@@ -363,6 +368,7 @@ class Choices {
 
     requestAnimationFrame(() => {
       this.dropdown.hide();
+      this.dropdownWrapper.close();
       this.containerOuter.close();
 
       if (!preventInputBlur && this._canSearch) {
@@ -1079,6 +1085,7 @@ class Choices {
     document.addEventListener('touchend', this._onTouchEnd);
     document.addEventListener('mousedown', this._onMouseDown);
     document.addEventListener('mouseover', this._onMouseOver);
+    window.addEventListener('scroll', this._onScroll);
 
     if (this._isSelectOneElement) {
       this.containerOuter.element.addEventListener('focus', this._onFocus);
@@ -1103,6 +1110,7 @@ class Choices {
     document.removeEventListener('touchend', this._onTouchEnd);
     document.removeEventListener('mousedown', this._onMouseDown);
     document.removeEventListener('mouseover', this._onMouseOver);
+    window.removeEventListener('scroll', this._onScroll);
 
     if (this._isSelectOneElement) {
       this.containerOuter.element.removeEventListener('focus', this._onFocus);
@@ -1124,7 +1132,8 @@ class Choices {
 
     if (
       target !== this.input.element &&
-      !this.containerOuter.element.contains(target)
+      !this.containerOuter.element.contains(target) &&
+      !this.dropdown.element.contains(target)
     ) {
       return;
     }
@@ -1137,6 +1146,7 @@ class Choices {
 
     const {
       BACK_KEY,
+      TAB_KEY,
       DELETE_KEY,
       ENTER_KEY,
       A_KEY,
@@ -1156,6 +1166,7 @@ class Choices {
     // Map keys to key actions
     const keyDownActions = {
       [A_KEY]: this._onAKey,
+      [TAB_KEY]: this._onTabKey,
       [ENTER_KEY]: this._onEnterKey,
       [ESC_KEY]: this._onEscapeKey,
       [UP_KEY]: this._onDirectionKey,
@@ -1233,6 +1244,14 @@ class Choices {
       if (shouldHightlightAll) {
         this.highlightAll();
       }
+    }
+  }
+
+  _onTabKey({ event, hasActiveDropdown }) {
+    if (hasActiveDropdown) {
+      this.dropdown.hide();
+      this.containerOuter.focus();
+      event.preventDefault();
     }
   }
 
@@ -1364,7 +1383,9 @@ class Choices {
   _onTouchEnd(event) {
     const { target } = event || event.touches[0];
     const touchWasWithinContainer =
-      this._wasTap && this.containerOuter.element.contains(target);
+      this._wasTap &&
+      (this.containerOuter.element.contains(target) ||
+        this.dropdown.element.contains(target));
 
     if (touchWasWithinContainer) {
       const containerWasExactTarget =
@@ -1388,15 +1409,23 @@ class Choices {
 
   _onMouseDown(event) {
     const { target, shiftKey } = event;
-    // If we have our mouse down on the scrollbar and are on IE11...
+
+    // If the target element is inside the choices list and we are on IE11...
     if (this.choiceList.element.contains(target) && isIE11()) {
-      this._isScrollingOnIe = true;
+      // ... but the click was on the right side of the items...
+      const firstItem = this.choiceList.getChild(
+        `.${this.config.classNames.item}`,
+      );
+      // then the click must have been on the scrollbar
+      const isOnScrollbar = event.offsetX >= firstItem.offsetWidth;
+      this._isScrollingOnIe = isOnScrollbar;
     }
 
-    if (
-      !this.containerOuter.element.contains(target) ||
-      target === this.input.element
-    ) {
+    const clickWasWithinContainer =
+      this.containerOuter.element.contains(target) ||
+      this.dropdown.element.contains(target);
+
+    if (!clickWasWithinContainer || target === this.input.element) {
       return;
     }
 
@@ -1428,10 +1457,17 @@ class Choices {
     }
   }
 
+  _onScroll() {
+    const hasActiveDropdown = this.dropdown.isActive;
+    if (hasActiveDropdown) {
+      requestAnimationFrame(() => this.dropdownWrapper.position());
+    }
+  }
+
   _onClick({ target }) {
-    const clickWasWithinContainer = this.containerOuter.element.contains(
-      target,
-    );
+    const clickWasWithinContainer =
+      this.containerOuter.element.contains(target) ||
+      this.dropdown.element.contains(target);
 
     if (clickWasWithinContainer) {
       if (!this.dropdown.isActive && !this.containerOuter.isDisabled) {
@@ -1463,9 +1499,9 @@ class Choices {
   }
 
   _onFocus({ target }) {
-    const focusWasWithinContainer = this.containerOuter.element.contains(
-      target,
-    );
+    const focusWasWithinContainer =
+      this.containerOuter.element.contains(target) ||
+      this.dropdown.element.contains(target);
 
     if (!focusWasWithinContainer) {
       return;
@@ -1497,7 +1533,9 @@ class Choices {
   }
 
   _onBlur({ target }) {
-    const blurWasWithinContainer = this.containerOuter.element.contains(target);
+    const blurWasWithinContainer =
+      this.containerOuter.element.contains(target) ||
+      this.dropdown.element.contains(target);
 
     if (blurWasWithinContainer && !this._isScrollingOnIe) {
       const activeItems = this._store.activeItems;
@@ -1828,6 +1866,11 @@ class Choices {
       element: this._getTemplate('dropdown'),
       classNames: this.config.classNames,
       type: this.passedElement.element.type,
+    });
+
+    this.dropdownWrapper = new FixedPositionDropdownContainer({
+      container: this.containerOuter,
+      dropdown: this.dropdown,
     });
   }
 

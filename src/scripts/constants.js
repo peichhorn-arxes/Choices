@@ -103,6 +103,7 @@ export const ACTION_TYPES = {
 export const KEY_CODES = {
   BACK_KEY: 46,
   DELETE_KEY: 8,
+  TAB_KEY: 9,
   ENTER_KEY: 13,
   A_KEY: 65,
   ESC_KEY: 27,

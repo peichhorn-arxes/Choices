@@ -184,7 +184,10 @@ export const dispatchEvent = (element, type, customArgs = null) => {
     cancelable: true,
   });
 
-  return element.dispatchEvent(event);
+  if (document.body.contains(element)) {
+    return element.dispatchEvent(event);
+  }
+  return false;
 };
 
 export const getWindowHeight = () => {
