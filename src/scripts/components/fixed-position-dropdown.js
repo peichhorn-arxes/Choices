@@ -31,8 +31,21 @@ export default class FixedPositionDropdownContainer {
   }
 
   destroy() {
+    this.destroyResizeObserver();
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
+    }
+  }
+
+  createResizeObserver() {
+    this.resizeObserver = new ResizeObserver(() => this.position());
+    this.resizeObserver.observe(this.container.element);
+  }
+
+  destroyResizeObserver() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
     }
   }
 
@@ -54,6 +67,8 @@ export default class FixedPositionDropdownContainer {
 
     this.element.classList.add(this.container.classNames.openState);
     this.element.setAttribute('aria-expanded', 'true');
+
+    this.createResizeObserver();
   }
 
   close() {
@@ -62,5 +77,6 @@ export default class FixedPositionDropdownContainer {
       this.element.removeChild(this.dropdown.element);
       this.container.element.appendChild(this.dropdown.element);
     }
+    this.destroyResizeObserver();
   }
 }

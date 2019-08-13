@@ -6725,8 +6725,28 @@ function () {
   }, {
     key: "destroy",
     value: function destroy() {
+      this.destroyResizeObserver();
+
       if (this.element && this.element.parentNode) {
         this.element.parentNode.removeChild(this.element);
+      }
+    }
+  }, {
+    key: "createResizeObserver",
+    value: function createResizeObserver() {
+      var _this = this;
+
+      this.resizeObserver = new ResizeObserver(function () {
+        return _this.position();
+      });
+      this.resizeObserver.observe(this.container.element);
+    }
+  }, {
+    key: "destroyResizeObserver",
+    value: function destroyResizeObserver() {
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect();
+        this.resizeObserver = null;
       }
     }
   }, {
@@ -6746,6 +6766,7 @@ function () {
       document.body.appendChild(this.element);
       this.element.classList.add(this.container.classNames.openState);
       this.element.setAttribute('aria-expanded', 'true');
+      this.createResizeObserver();
     }
   }, {
     key: "close",
@@ -6755,6 +6776,8 @@ function () {
         this.element.removeChild(this.dropdown.element);
         this.container.element.appendChild(this.dropdown.element);
       }
+
+      this.destroyResizeObserver();
     }
   }]);
 
