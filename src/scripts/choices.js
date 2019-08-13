@@ -802,6 +802,19 @@ class Choices {
 
     const passedId = element.getAttribute('data-id');
 
+    activeItems.forEach(item => {
+      if (item.id === parseInt(passedId, 10)) {
+        const { id, groupId = -1, value = '', label = '' } = item;
+        const group = groupId >= 0 ? this._store.getGroupById(groupId) : null;
+        this.passedElement.triggerEvent(EVENTS.selectItem, {
+          id,
+          value,
+          label,
+          groupValue: group && group.value ? group.value : null,
+        });
+      }
+    });
+
     // We only want to select one item with a click
     // so we deselect any items that aren't the target
     // unless shift is being pressed

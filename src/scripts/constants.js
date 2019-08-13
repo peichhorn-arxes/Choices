@@ -84,6 +84,7 @@ export const EVENTS = {
   search: 'search',
   addItem: 'addItem',
   removeItem: 'removeItem',
+  selectItem: 'selectItem',
   highlightItem: 'highlightItem',
   highlightChoice: 'highlightChoice',
 };

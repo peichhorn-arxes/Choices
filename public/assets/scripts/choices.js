@@ -500,6 +500,7 @@ var EVENTS = {
   search: 'search',
   addItem: 'addItem',
   removeItem: 'removeItem',
+  selectItem: 'selectItem',
   highlightItem: 'highlightItem',
   highlightChoice: 'highlightChoice'
 };
@@ -2522,7 +2523,26 @@ function () {
         return;
       }
 
-      var passedId = element.getAttribute('data-id'); // We only want to select one item with a click
+      var passedId = element.getAttribute('data-id');
+      activeItems.forEach(function (item) {
+        if (item.id === parseInt(passedId, 10)) {
+          var id = item.id,
+              _item$groupId3 = item.groupId,
+              groupId = _item$groupId3 === void 0 ? -1 : _item$groupId3,
+              _item$value3 = item.value,
+              value = _item$value3 === void 0 ? '' : _item$value3,
+              _item$label3 = item.label,
+              label = _item$label3 === void 0 ? '' : _item$label3;
+          var group = groupId >= 0 ? _this16._store.getGroupById(groupId) : null;
+
+          _this16.passedElement.triggerEvent(_constants.EVENTS.selectItem, {
+            id: id,
+            value: value,
+            label: label,
+            groupValue: group && group.value ? group.value : null
+          });
+        }
+      }); // We only want to select one item with a click
       // so we deselect any items that aren't the target
       // unless shift is being pressed
 
