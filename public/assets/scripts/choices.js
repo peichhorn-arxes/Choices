@@ -108,7 +108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.diff = exports.cloneObject = exports.existsInArray = exports.isIE11 = exports.fetchFromObject = exports.getWindowHeight = exports.dispatchEvent = exports.sortByScore = exports.sortByAlpha = exports.calcWidthOfInput = exports.strToEl = exports.sanitise = exports.isScrolledIntoView = exports.getAdjacentEl = exports.findAncestorByAttrName = exports.wrap = exports.isElement = exports.isType = exports.getType = exports.generateId = exports.generateChars = exports.getRandomNumber = void 0;
+exports.diff = exports.cloneObject = exports.existsInArray = exports.isIE11 = exports.fetchFromObject = exports.dispatchEvent = exports.sortByScore = exports.sortByAlpha = exports.calcWidthOfInput = exports.strToEl = exports.sanitise = exports.isScrolledIntoView = exports.getAdjacentEl = exports.findAncestorByAttrName = exports.wrap = exports.isElement = exports.isType = exports.getType = exports.generateId = exports.generateChars = exports.getRandomNumber = void 0;
 
 var _this = void 0;
 
@@ -340,14 +340,6 @@ var dispatchEvent = function dispatchEvent(element, type) {
 };
 
 exports.dispatchEvent = dispatchEvent;
-
-var getWindowHeight = function getWindowHeight() {
-  var body = document.body;
-  var html = document.documentElement;
-  return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
-};
-
-exports.getWindowHeight = getWindowHeight;
 
 var fetchFromObject = function fetchFromObject(object, path) {
   var index = path.indexOf('.');
@@ -5917,8 +5909,6 @@ function () {
   }, {
     key: "shouldFlip",
     value: function shouldFlip(dropdownPos) {
-      var windowHeight = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (0, _utils.getWindowHeight)();
-
       if (dropdownPos === undefined) {
         return false;
       } // If flip is enabled and the dropdown bottom position is
@@ -5928,7 +5918,7 @@ function () {
       var shouldFlip = false;
 
       if (this.position === 'auto') {
-        shouldFlip = dropdownPos >= windowHeight;
+        shouldFlip = dropdownPos - window.scrollY >= window.innerHeight;
       } else if (this.position === 'top') {
         shouldFlip = true;
       }
@@ -6752,29 +6742,35 @@ function () {
   }, {
     key: "open",
     value: function open(dropdownPos) {
-      this.element = this.container.element.cloneNode(false);
-      this.element.classList.add('choices--cloned');
       var shouldFlip = this.container.shouldFlip(dropdownPos);
 
-      if (shouldFlip) {
-        this.element.classList.add(this.container.classNames.flippedState);
-      }
+      if (this.element) {
+        this.position(shouldFlip);
+      } else {
+        this.element = this.container.element.cloneNode(false);
+        this.element.classList.add('choices--cloned');
 
-      this.position(shouldFlip);
-      this.container.element.removeChild(this.dropdown.element);
-      this.element.appendChild(this.dropdown.element);
-      document.body.appendChild(this.element);
-      this.element.classList.add(this.container.classNames.openState);
-      this.element.setAttribute('aria-expanded', 'true');
-      this.createResizeObserver();
+        if (shouldFlip) {
+          this.element.classList.add(this.container.classNames.flippedState);
+        }
+
+        this.position(shouldFlip);
+        this.container.element.removeChild(this.dropdown.element);
+        this.element.appendChild(this.dropdown.element);
+        document.body.appendChild(this.element);
+        this.element.classList.add(this.container.classNames.openState);
+        this.element.setAttribute('aria-expanded', 'true');
+        this.createResizeObserver();
+      }
     }
   }, {
     key: "close",
     value: function close() {
-      if (this.element && this.element.parentNode) {
+      if (this.element) {
         this.element.parentNode.removeChild(this.element);
         this.element.removeChild(this.dropdown.element);
         this.container.element.appendChild(this.dropdown.element);
+        this.element = null;
       }
 
       this.destroyResizeObserver();

@@ -190,18 +190,6 @@ export const dispatchEvent = (element, type, customArgs = null) => {
   return false;
 };
 
-export const getWindowHeight = () => {
-  const body = document.body;
-  const html = document.documentElement;
-  return Math.max(
-    body.scrollHeight,
-    body.offsetHeight,
-    html.clientHeight,
-    html.scrollHeight,
-    html.offsetHeight,
-  );
-};
-
 export const fetchFromObject = (object, path) => {
   const index = path.indexOf('.');
 

@@ -50,32 +50,36 @@ export default class FixedPositionDropdownContainer {
   }
 
   open(dropdownPos) {
-    this.element = this.container.element.cloneNode(false);
-    this.element.classList.add('choices--cloned');
-
     const shouldFlip = this.container.shouldFlip(dropdownPos);
+    if (this.element) {
+      this.position(shouldFlip);
+    } else {
+      this.element = this.container.element.cloneNode(false);
+      this.element.classList.add('choices--cloned');
 
-    if (shouldFlip) {
-      this.element.classList.add(this.container.classNames.flippedState);
+      if (shouldFlip) {
+        this.element.classList.add(this.container.classNames.flippedState);
+      }
+
+      this.position(shouldFlip);
+
+      this.container.element.removeChild(this.dropdown.element);
+      this.element.appendChild(this.dropdown.element);
+      document.body.appendChild(this.element);
+
+      this.element.classList.add(this.container.classNames.openState);
+      this.element.setAttribute('aria-expanded', 'true');
+
+      this.createResizeObserver();
     }
-
-    this.position(shouldFlip);
-
-    this.container.element.removeChild(this.dropdown.element);
-    this.element.appendChild(this.dropdown.element);
-    document.body.appendChild(this.element);
-
-    this.element.classList.add(this.container.classNames.openState);
-    this.element.setAttribute('aria-expanded', 'true');
-
-    this.createResizeObserver();
   }
 
   close() {
-    if (this.element && this.element.parentNode) {
+    if (this.element) {
       this.element.parentNode.removeChild(this.element);
       this.element.removeChild(this.dropdown.element);
       this.container.element.appendChild(this.dropdown.element);
+      this.element = null;
     }
     this.destroyResizeObserver();
   }
